@@ -26,7 +26,7 @@ def get_all_combinations(nb_colors):
 def combination_to_integer(code, nb_colors):
     integer = 0
     for i in range(4):
-        integer += ((nb_colors ** i) * int(ord(code[i]) - 65))
+        integer += ((nb_colors ** i) * (ord(code[i]) - 65))
     return integer
 
 
@@ -166,10 +166,12 @@ def get_clean_feedback():
         print("Please respect format : 4 characters, 0s, 1s and 2s without space, numbers are in ascending order !")
 
 
-# Let the computer play a game, choosing randomly a secret_code and trying to guess it independently if alone == True.
-# You can use this function to crack an game, using alone = False and setting the right number of colors. 
-# It prints some information at each iteration
 def play_game(nb_colors, pool, alone=True, set_secret=False, secret=None):
+    """
+    Let the computer play a game, choosing randomly a secret_code and trying to guess it independently if alone == True.
+    You can use this function to crack a game, using alone = False and setting the right number of colors. 
+    It prints some information at each iteration
+    """
     current_pool = pool
     if alone:
         secret_code = secret if set_secret else random.choice(current_pool)
@@ -181,7 +183,7 @@ def play_game(nb_colors, pool, alone=True, set_secret=False, secret=None):
             results = ["AAAA", "BBBA", "CCBB", "DDCB", "EEDC", "FEDC", "GFED", "HGFE"][nb_colors - 1]
         else:
             results = find_best_guess(current_pool, nb_colors)
-        print(f"Guess n°{nb_guess + 1}: ", results[0])
+        print(f"Guess n°{nb_guess + 1}: {results[0]}")
         if alone:
             pattern = evaluate_pattern(results[0], secret_code)
         else:
@@ -213,5 +215,8 @@ def play_all_games_alone(nb_colors):
     return statistics.mean(all_nb_of_guesses)
 
 
+# TODO: Speedtest first guess
+# TODO: Speedtest play_game pour toutes les couleurs (4-8)
+# TODO: Loading pattern matrix at each iteration ? Tester le temps de loading !!
 # TODO: make a manim animation
 # TODO: Optimize code, redondant calculation etc.
