@@ -26,7 +26,7 @@ def get_all_combinations(nb_colors):
 def combination_to_integer(code, nb_colors):
     integer = 0
     for i in range(4):
-        integer += ((nb_colors ** i) * (ord(code[i]) - 65))
+        integer += ((nb_colors ** i) * int(ord(code[i]) - 65))
     return integer
 
 
@@ -180,7 +180,37 @@ def play_game(nb_colors, pool, alone=True, set_secret=False, secret=None):
     nb_guess = 0
     while not correct:
         if nb_guess == 0:
-            results = ["AAAA", "BBBA", "CCBB", "DDCB", "EEDC", "FEDC", "GFED", "HGFE"][nb_colors - 1]
+            results = [["AAAA", "BBBA", "CCBB", "DDCB", "EEDC", "FEDC", "GFED", "HGFE"][nb_colors - 1]]
+        else:
+            results = find_best_guess(current_pool, nb_colors)
+        if alone:
+            pattern = evaluate_pattern(results[0], secret_code)
+        else:
+            pattern = pattern_to_integer(get_clean_feedback())
+        new_pool = get_all_codes_matching_pattern(results[0], pattern, current_pool, nb_colors)
+        nb_guess += 1
+        current_pool = new_pool
+        if pattern == 80:
+            correct = True
+    print("Number of guesses : ", nb_guess)
+    return nb_guess
+
+
+def play_game_with_prints(nb_colors, pool, alone=True, set_secret=False, secret=None):
+    """
+    Let the computer play a game, choosing randomly a secret_code and trying to guess it independently if alone == True.
+    You can use this function to crack a game, using alone = False and setting the right number of colors.
+    It prints some information at each iteration
+    """
+    current_pool = pool
+    if alone:
+        secret_code = secret if set_secret else random.choice(current_pool)
+        print("Secret code", secret_code)
+    correct = False
+    nb_guess = 0
+    while not correct:
+        if nb_guess == 0:
+            results = [["AAAA", "BBBA", "CCBB", "DDCB", "EEDC", "FEDC", "GFED", "HGFE"][nb_colors - 1]]
         else:
             results = find_best_guess(current_pool, nb_colors)
         print(f"Guess n°{nb_guess + 1}: {results[0]}")
