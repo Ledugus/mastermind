@@ -80,10 +80,10 @@ def expected_information(code, pool):
 # 3 : the remaining information on average
 def find_best_guess(pool):
     best = ""
-    minimax = len(pool)
+    minimax = len(pool)+1
     for code in pool:
         e_i = expected_information(code, pool)
-        if e_i <= minimax:
+        if e_i < minimax:
             best = code
             minimax = e_i
 
@@ -124,7 +124,7 @@ def play_game(nb_colors, pool, alone=True, set_secret=False, secret=None):
     nb_guess = 0
     while not correct:
         if nb_guess == 0:
-            results = [["AAAA", "BBBA", "CCBB", "DDCB", "EEDC", "EEFF", "GFED", "HGFE"][nb_colors - 1]]
+            results = [["AAAA", "BBBA", "CCBB", "DDCB", "EEDC", "FEDC", "GFED", "HGFE"][nb_colors - 1]]
         else:
             results = find_best_guess(current_pool)
         if alone:
@@ -136,7 +136,6 @@ def play_game(nb_colors, pool, alone=True, set_secret=False, secret=None):
         current_pool = new_pool
         if pattern == 40:
             correct = True
-    print("Number of guesses : ", nb_guess)
     return nb_guess
 
 

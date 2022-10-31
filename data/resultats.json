@@ -1,4 +1,8 @@
 {"best_openers": ["AAAA", "BBBA", "CCBB", "DDCB", "EEDC", "FEDC", "GFED", "HGFE"],
   "average_nb_guess": [1, 2.75, 3.1235, 3.5547, 3.9744, 4.4645, 4.8009, 0],
   "information_to_get": [0.0, 4.0, 6.3399, 8.0, 9.2877, 10.3399, 11.2294, 12.0],
-  "information_per_guess_on_average": [0.0, 1.4545, 2.0297, 2.2505, 2.3369, 2.316, 0, 0]}
+  "information_per_guess_on_average": [0.0, 1.4545, 2.0297, 2.2505, 2.3369, 2.316, 0, 0]
+"best_openers_minimax": ["AAAA", "BBBA", "CCBB", "DDCB", "EEDC", "FEDC", "GFED", "HGFE"],
+  "average_nb_guess_minimax": [1, 2.75, 3.1235,  3.5859, 4.04, 4.4845, 4.8009, 0],
+  "information_to_get_minimax": [0.0, 4.0, 6.3399, 8.0, 9.2877, 10.3399, 11.2294, 12.0],
+  "information_per_guess_on_average_minimax": [0.0, 1.4545, 2.0297, 2.2505, 2.3369, 2.316, 0, 0]}

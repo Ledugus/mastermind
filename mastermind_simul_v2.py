@@ -141,7 +141,6 @@ def play_game(nb_colors, pool, alone=True, set_secret=False, secret=None):
         current_pool = new_pool
         if pattern == 40:
             correct = True
-    print("Number of guesses : ", nb_guess)
     return nb_guess
 
 
