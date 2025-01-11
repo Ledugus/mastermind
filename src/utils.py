@@ -43,6 +43,15 @@ def evaluate_pattern(code1, code2):
     return 5 * (pattern.count(2)) + (pattern.count(1))
 
 
+def evaluate_patterns(pool):
+    pattern_matrix = np.zeros((len(pool), len(pool)), dtype=np.uint8)
+    for i, code1 in enumerate(pool):
+        for j, code2 in enumerate(pool[i:]):
+            pattern_matrix[i, j] = evaluate_pattern(code1, code2)
+            pattern_matrix[j, i] = pattern_matrix[i, j]
+    return pattern_matrix
+
+
 def code_to_int_array(code):
     return np.array([ord(c) - 65 for c in code], dtype=np.uint8)
 
