@@ -134,7 +134,7 @@ class EntropicSolver(MastermindSolver):
         )
         return expected_information_of_code
 
-    def find_best_guess(self, pool, nb_colors):
+    def find_best_guess_old(self, pool, nb_colors):
         """Return a tuple of 2 elements :
         1 : the string of the best guess
         2 : the entropy of this guess
@@ -158,3 +158,36 @@ class EntropicSolver(MastermindSolver):
         if len(pool) == nb_colors**4:
             self.save_first_guess(nb_colors, *results)
         return results
+
+    def find_best_guess(self, pool, nb_colors):
+        """Return a tuple of 2 elements :
+        1 : the string of the best guess
+        2 : the entropy of this guess
+        """
+        if len(pool) == nb_colors**4:
+            if str(nb_colors) in self.first_guesses:
+                results = self.get_first_guess(nb_colors)
+                return results
+        pattern_matrix = evaluate_pattern_matrix(pool)
+        n = len(pool)
+        distributions = np.zeros((n, 21), dtype=np.float32)
+        n_range = np.arange(n)
+        prob = 1 / n
+        for j in range(n):
+            distributions[n_range, pattern_matrix[:, j]] += prob
+        axis = len(distributions.shape) - 1
+        entropies = stats.entropy(distributions, base=2, axis=axis)
+        results = pool[np.argmax(entropies)], float(np.max(entropies))
+        if len(pool) == nb_colors**4:
+            self.save_first_guess(nb_colors, *results)
+        return results
+
+
+class RandomSolver(MastermindSolver):
+    """A Mastermind solver based on random guesses"""
+
+    def __init__(self):
+        super().__init__("Random Solver", "rand")
+
+    def find_best_guess(self, pool, nb_colors):
+        return random.choice(pool), 0.0

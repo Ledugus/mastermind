@@ -43,6 +43,34 @@ def evaluate_pattern(code1, code2):
     return 5 * (pattern.count(2)) + (pattern.count(1))
 
 
+def code_to_int_array(code):
+    return np.array([ord(c) - 65 for c in code], dtype=np.uint8)
+
+
+def evaluate_pattern_matrix(pool):
+    pattern_matrix = np.zeros((len(pool), len(pool)), dtype=np.uint8)
+    nl = 4
+    pool = np.array([code_to_int_array(code) for code in pool])
+    ncode = len(pool)
+    equality_grid = np.zeros((ncode, ncode, nl, nl), dtype=bool)
+    for i, j in it.product(range(nl), range(nl)):
+        equality_grid[:, :, i, j] = np.equal.outer(pool[:, i], pool[:, j])
+    for i in range(nl):
+        matches = equality_grid[:, :, i, i].flatten()
+        pattern_matrix.flat[matches] += 5
+        for k in range(nl):
+            equality_grid[:, :, k, i].flat[matches] = False
+            equality_grid[:, :, i, k].flat[matches] = False
+    for i, j in it.product(range(nl), range(nl)):
+        matches = equality_grid[:, :, i, j].flatten()
+        pattern_matrix.flat[matches] += 1
+        for k in range(nl):
+            equality_grid[:, :, k, j].flat[matches] = False
+            equality_grid[:, :, i, k].flat[matches] = False
+
+    return pattern_matrix
+
+
 def get_clean_feedback():
     """If you play against someone, you enter yourself feedback.
     This function reads and cleans user input : return an integer between 0 and 40"""
