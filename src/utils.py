@@ -44,6 +44,7 @@ def evaluate_pattern(code1, code2):
 
 
 def evaluate_patterns(pool):
+    """Evaluate naively all patterns between all codes in the pool"""
     pattern_matrix = np.zeros((len(pool), len(pool)), dtype=np.uint8)
     for i, code1 in enumerate(pool):
         for j, code2 in enumerate(pool[i:]):
@@ -52,11 +53,16 @@ def evaluate_patterns(pool):
     return pattern_matrix
 
 
+def pattern_int_to_list(pattern):
+    return [pattern // 5, pattern % 5]
+
+
 def code_to_int_array(code):
     return np.array([ord(c) - 65 for c in code], dtype=np.uint8)
 
 
 def evaluate_pattern_matrix(pool):
+    """Evaluate all patterns between all codes in the pool using vectorized operations"""
     pattern_matrix = np.zeros((len(pool), len(pool)), dtype=np.uint8)
     nl = 4
     pool = np.array([code_to_int_array(code) for code in pool])

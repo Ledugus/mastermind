@@ -10,7 +10,7 @@ class TestEntropicSolver(unittest.TestCase):
     def test_find_best_guess(self):
         pool = ["AAAA", "AAAB", "AABB", "ABBB", "BBBB"]
         for solver in self.test_solvers:
-            guess, entropy = solver.find_best_guess(pool, 4)
+            guess, entropy = solver.get_next_guess(pool, 4)
             self.assertIn(guess, pool)
             self.assertIsInstance(entropy, float)
             self.assertGreaterEqual(entropy, 0)

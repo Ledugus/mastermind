@@ -1,9 +1,18 @@
 import random
 import json
-import numpy as np
 from abc import ABC, abstractmethod
-from utils import *
+
+import numpy as np
 import scipy.stats as stats
+from utils import (
+    log2,
+    get_all_codes,
+    get_all_codes_matching_pattern,
+    pattern_int_to_list,
+    evaluate_pattern,
+    get_clean_feedback,
+    evaluate_pattern_matrix,
+)
 
 
 class MastermindSolver(ABC):
@@ -14,7 +23,7 @@ class MastermindSolver(ABC):
         self.alias = alias
 
     @abstractmethod
-    def get_next_guess(self, pool, nb_colors, parallel=True):
+    def get_next_guess(self, pool, nb_colors, parallel=True) -> tuple[str, float]:
         """Return the best guess to make in the pool of possibilities
         and the expected information in the case of the Entropic Solver"""
 
@@ -48,7 +57,7 @@ class MastermindSolver(ABC):
         guesses = []
         entropy_values = []
         while not correct:
-            results = self.find_best_guess(current_pool, nb_colors, parallel=parallel)
+            results = self.get_next_guess(current_pool, nb_colors, parallel=parallel)
             if alone:
                 pattern = evaluate_pattern(results[0], secret_code)
             else:
@@ -62,7 +71,7 @@ class MastermindSolver(ABC):
             if debug or not alone:
                 print(f"Guess n°{len(guesses)} : {current_guess}")
                 print(
-                    f"FeedBack : , {pattern_to_int_list(pattern)[0]} well placed, {pattern_to_int_list(pattern)[1]} misplaced"
+                    f"FeedBack : , {pattern_int_to_list(pattern)[0]} well placed, {pattern_int_to_list(pattern)[1]} misplaced"
                 )
                 print(f"Expected information : {results[1]} bits")
                 print(
