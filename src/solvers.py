@@ -27,6 +27,10 @@ class MastermindSolver(ABC):
         """Return the best guess to make in the pool of possibilities
         and the score assigned to this guess by the solver."""
 
+    @abstractmethod
+    def print_guess_stats(self, result, current_pool, new_pool):
+        """Print the stats of the last guess"""
+
     def solve(
         self,
         nb_colors,
@@ -77,7 +81,8 @@ class MastermindSolver(ABC):
                 current_guess, pattern, current_pool
             )
             if pattern == 20:
-                print(f"Youhou ! I found it in {len(guesses)} guesses !")
+                if debug or not alone:
+                    print(f"Youhou ! Solution found in {len(guesses)} guesses !")
                 secret_code = current_guess
                 break
             if len(new_pool) == 0:
@@ -87,10 +92,7 @@ class MastermindSolver(ABC):
                 print(
                     f"FeedBack : {pattern_int_to_list(pattern)[0]} well placed, {pattern_int_to_list(pattern)[1]} misplaced"
                 )
-                print(f"Expected information : {results[1]:.3f} bits")
-                print(
-                    f"Actual information received : {log2(len(current_pool) / len(new_pool)):.3f} bits, {len(new_pool)} remaining possibilities"
-                )
+                self.print_guess_stats(results, current_pool, new_pool)
             current_pool = new_pool
 
         return secret_code, guesses, entropy_values
@@ -216,6 +218,14 @@ class EntropicSolver(MastermindSolver):
         if parallel:
             return self.find_best_guess(pool, nb_colors)
         return self.find_best_guess_old(pool, nb_colors)
+        # return self.find_best_guess_old(pool, nb_colors)d
+
+    def print_guess_stats(self, result, current_pool, new_pool):
+        """Print the stats of the last guess"""
+        print(f"Expected information : {result[1]:.3f} bits")
+        print(
+            f"Actual information received : {log2(len(current_pool) / len(new_pool)):.3f} bits, {len(new_pool)} remaining possibilities"
+        )
 
 
 class RandomSolver(MastermindSolver):
@@ -224,5 +234,32 @@ class RandomSolver(MastermindSolver):
     def __init__(self):
         super().__init__("Random Solver", "rand")
 
+    def print_guess_stats(self, result, current_pool, new_pool):
+        """Print the stats of the last guess"""
+        print()
+
     def get_next_guess(self, pool, nb_colors, parallel=True):
         return random.choice(pool), 1 / len(pool)
+
+
+class UserSolver(MastermindSolver):
+    """A Mastermind solver based on user input"""
+
+    def __init__(self):
+        super().__init__("User Solver", "user")
+
+    def print_guess_stats(self, result, current_pool, new_pool):
+        """Print the stats of the last guess"""
+        print()
+
+    def get_next_guess(self, pool, nb_colors, parallel=True):
+        last_letter = chr(ord("A") + nb_colors - 1)
+        guess = input(f"enter your guess (between A and {last_letter}): ").upper()
+        while len(guess) != 4 or not all(
+            ord(c) in range(ord("A"), ord("A") + nb_colors) for c in guess
+        ):
+            guess = input(
+                f"Invalid guess. Enter your guess (between A and {last_letter}): "
+            ).upper()
+
+        return guess, 1 / len(pool)
