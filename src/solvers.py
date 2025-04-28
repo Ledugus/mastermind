@@ -25,7 +25,7 @@ class MastermindSolver(ABC):
     @abstractmethod
     def get_next_guess(self, pool, nb_colors, parallel=True) -> tuple[str, float]:
         """Return the best guess to make in the pool of possibilities
-        and the expected information in the case of the Entropic Solver"""
+        and the score assigned to this guess by the solver."""
 
     def solve(
         self,
@@ -42,9 +42,9 @@ class MastermindSolver(ABC):
             nb_colors (int): The number of possible colors in the game.
             custom_pool (list, optional): A list of all possible codes. Defaults to [].
             alone (bool, optional): If True, the function will generate a secret code and play against it. Defaults to True.
-            set_secret (bool, optional): If True, the function will use the secret code given in the secret argument. Defaults to False.
             secret (str, optional): The secret code to use if set_secret is True. Defaults to None.
             debug (bool, optional): If True, the function will print debug information. Defaults to False.
+            parallel (bool, optional): If True, the function will use parallel processing. Defaults to True.
 
 
         Returns:
@@ -57,30 +57,42 @@ class MastermindSolver(ABC):
         guesses = []
         entropy_values = []
         while not correct:
+            # Make the next guess
             results = self.get_next_guess(current_pool, nb_colors, parallel=parallel)
+            current_guess = results[0]
+            guesses.append(current_guess)
+            entropy_values.append(results[1])
+
+            if debug or not alone:
+                print(f"Guess n°{len(guesses)} : {current_guess}")
+
+            # Get the feedback
             if alone:
                 pattern = evaluate_pattern(results[0], secret_code)
             else:
                 pattern = get_clean_feedback()
-            current_guess = results[0]
-            guesses.append(current_guess)
-            entropy_values.append(results[1])
+
+            # Evaluate the feedback
             new_pool = get_all_codes_matching_pattern(
                 current_guess, pattern, current_pool
             )
+            if pattern == 20:
+                print(f"Youhou ! I found it in {len(guesses)} guesses !")
+                secret_code = current_guess
+                break
+            if len(new_pool) == 0:
+                print("No more possibilities left ! Did you enter the right feedback ?")
+                break
             if debug or not alone:
-                print(f"Guess n°{len(guesses)} : {current_guess}")
                 print(
-                    f"FeedBack : , {pattern_int_to_list(pattern)[0]} well placed, {pattern_int_to_list(pattern)[1]} misplaced"
+                    f"FeedBack : {pattern_int_to_list(pattern)[0]} well placed, {pattern_int_to_list(pattern)[1]} misplaced"
                 )
-                print(f"Expected information : {results[1]} bits")
+                print(f"Expected information : {results[1]:.3f} bits")
                 print(
-                    f"Actual information received : {log2(len(current_pool) / len(new_pool))} bits, {len(new_pool)} remaining possibilities"
+                    f"Actual information received : {log2(len(current_pool) / len(new_pool)):.3f} bits, {len(new_pool)} remaining possibilities"
                 )
             current_pool = new_pool
 
-            if pattern == 20:
-                correct = True
         return secret_code, guesses, entropy_values
 
     def solve_all_codes(self, nb_colors, parallel=True):
@@ -180,6 +192,7 @@ class EntropicSolver(MastermindSolver):
         return distributions
 
     def get_entropy(self, distributions):
+        """Return the entropy of the distributions"""
         axis = len(distributions.shape) - 1
         return stats.entropy(distributions, base=2, axis=axis)
 
@@ -212,4 +225,4 @@ class RandomSolver(MastermindSolver):
         super().__init__("Random Solver", "rand")
 
     def get_next_guess(self, pool, nb_colors, parallel=True):
-        return random.choice(pool), 0.0
+        return random.choice(pool), 1 / len(pool)

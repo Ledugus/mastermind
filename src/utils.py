@@ -11,7 +11,7 @@ def log2(x):
 
 
 def get_all_codes(nb_colors):
-    colors = ["A", "B", "C", "D", "E", "F", "G", "H"]
+    colors = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
 
     codes = [
         f"{w}{z}{y}{x}"
@@ -86,11 +86,23 @@ def evaluate_pattern_matrix(pool):
     return pattern_matrix
 
 
+def get_int_input(prompt, bounds, error_message):
+    """Get an integer input from the user within specified bounds"""
+    while True:
+        try:
+            value = int(input(prompt))
+            if bounds[0] <= value <= bounds[1]:
+                return value
+            print(error_message)
+        except ValueError:
+            print("Invalid input. Please enter a number.")
+
+
 def get_clean_feedback():
     """If you play against someone, you enter yourself feedback.
     This function reads and cleans user input : return an integer between 0 and 40"""
     while True:
-        feedback = input("Entrez le feedback : ")
+        feedback = input("Enter feedback : ")
         if feedback.isdigit():
             if feedback in list(str(x) + str(y) for x in range(5) for y in range(5)):
                 return 5 * int(feedback[0]) + int(feedback[1])
