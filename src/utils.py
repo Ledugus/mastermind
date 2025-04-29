@@ -6,6 +6,16 @@ import itertools as it
 DATA_DIR = os.path.join(os.path.dirname(__file__), "data")
 
 
+def progress_bar(progress, total, bar_length=40):
+    """Display a progress bar in the console."""
+    percent = (progress / total) * 100
+    filled_length = int(bar_length * progress // total)
+    bar = "█" * filled_length + "-" * (bar_length - filled_length)
+    print(f"\r|{bar}| {percent:.2f}%", end="\r")
+    if progress == total:
+        print()
+
+
 def log2(x):
     return math.log2(x) if x > 0 else 0
 
@@ -89,13 +99,14 @@ def evaluate_pattern_matrix(pool):
 def get_int_input(prompt, bounds, error_message):
     """Get an integer input from the user within specified bounds"""
     while True:
+        user_input = input(prompt)
         try:
-            value = int(input(prompt))
+            value = int(user_input)
             if bounds[0] <= value <= bounds[1]:
                 return value
             print(error_message)
         except ValueError:
-            print("Invalid input. Please enter a number.")
+            print("Invalid input. Please enter a number or a valid command.")
 
 
 def get_clean_feedback():

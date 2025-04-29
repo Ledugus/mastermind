@@ -93,6 +93,7 @@ class MastermindSolver(ABC):
                     f"FeedBack : {pattern_int_to_list(pattern)[0]} well placed, {pattern_int_to_list(pattern)[1]} misplaced"
                 )
                 self.print_guess_stats(results, current_pool, new_pool)
+                print("-----")
             current_pool = new_pool
 
         return secret_code, guesses, entropy_values
@@ -207,6 +208,7 @@ class EntropicSolver(MastermindSolver):
             if str(nb_colors) in self.first_guesses:
                 results = self.get_first_guess(nb_colors)
                 return results
+            print("Calculating first guess... (takes longer the first time)")
         distributions = self.get_patterns_probability_distribution_matrix(pool)
         entropies = self.get_entropy(distributions)
         results = pool[np.argmax(entropies)], float(np.max(entropies))
@@ -236,7 +238,7 @@ class RandomSolver(MastermindSolver):
 
     def print_guess_stats(self, result, current_pool, new_pool):
         """Print the stats of the last guess"""
-        print()
+        pass
 
     def get_next_guess(self, pool, nb_colors, parallel=True):
         return random.choice(pool), 1 / len(pool)
@@ -250,11 +252,11 @@ class UserSolver(MastermindSolver):
 
     def print_guess_stats(self, result, current_pool, new_pool):
         """Print the stats of the last guess"""
-        print()
+        pass
 
     def get_next_guess(self, pool, nb_colors, parallel=True):
         last_letter = chr(ord("A") + nb_colors - 1)
-        guess = input(f"enter your guess (between A and {last_letter}): ").upper()
+        guess = input(f"Enter your guess (between A and {last_letter}): ").upper()
         while len(guess) != 4 or not all(
             ord(c) in range(ord("A"), ord("A") + nb_colors) for c in guess
         ):
