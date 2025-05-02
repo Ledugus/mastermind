@@ -25,12 +25,10 @@ def play():
     )
     letters_pool = "ABCDEFGH"[:nb_colors]
     if mode == 1:
-        solver = UserSolver()
+        solver = UserSolver(nb_colors)
         pool = get_all_codes(nb_colors)
         secret_code = "".join(random.sample(letters_pool, 4))
-        solver.solve(
-            nb_colors, secret=secret_code, custom_pool=pool, alone=True, debug=True
-        )
+        solver.solve(secret=secret_code, custom_pool=pool, alone=True, debug=True)
     if mode == 2:
         print(
             f"""Choose a secret code consisting of 4 letters between A and {letters_pool[-1]}. \
@@ -38,9 +36,9 @@ The solver will try to guess it using information theory."""
         )
         print("Let's play !")
         print("-----")
-        solver = KnuthMinMaxSolver()
+        solver = KnuthMinMaxSolver(nb_colors)
         pool = get_all_codes(nb_colors)
-        solver.solve(nb_colors, custom_pool=pool, alone=False)
+        solver.solve(custom_pool=pool, alone=False)
 
 
 if __name__ == "__main__":

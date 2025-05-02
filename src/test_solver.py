@@ -1,5 +1,7 @@
+import random
 import unittest
 from solvers import EntropicSolver, MastermindSolver, RandomSolver, KnuthMinMaxSolver
+from utils import get_all_codes
 
 NB_COLORS = 2
 
@@ -29,9 +31,9 @@ class TestEntropicSolver(unittest.TestCase):
                 self.assertGreater(8, len(res[1]))
 
     def test_knuth_min_max_solver(self):
-        print("Testing KnuthMinMaxSolver")
-        nb_colors = 4
+        nb_colors = 6
         solver = KnuthMinMaxSolver(nb_colors)
+        full_pool = get_all_codes(nb_colors)
         results = solver.solve_all_codes()
         self.assertEqual(len(results), nb_colors**4)
         for res in results:

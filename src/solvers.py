@@ -15,6 +15,7 @@ class MastermindSolver(ABC):
         self.alias = alias
         self.nb_colors = nb_colors
         self.pattern_matrix = evaluate_pattern_matrix(get_all_codes(nb_colors))
+        self.first_guesses = {}
 
     @abstractmethod
     def get_next_guess(self, pool, parallel=True) -> tuple[str, float]:
@@ -24,6 +25,21 @@ class MastermindSolver(ABC):
     @abstractmethod
     def print_guess_stats(self, result, current_pool, new_pool):
         """Print the stats of the last guess"""
+
+    def load_first_guesses(self):
+        with open(f"src/{self.alias}_first_guesses.json", "r") as f:
+            first_guesses_dict = json.load(f)
+        return first_guesses_dict
+
+    def get_first_guess(self):
+        return self.first_guesses[str(self.nb_colors)]
+
+    def save_first_guess(self, guess, information_got):
+        with open(f"src/{self.alias}_first_guesses.json", "r") as f:
+            first_guesses_dict = json.load(f)
+            first_guesses_dict[str(self.nb_colors)] = (guess, information_got)
+        with open(f"src/{self.alias}_first_guesses.json", "w") as f:
+            json.dump(first_guesses_dict, f)
 
     def solve(
         self,
@@ -92,7 +108,7 @@ class MastermindSolver(ABC):
         return secret_code, guesses, scores
 
     def solve_all_codes(self, parallel=True):
-        """Solve the game Mastermind with a given number of colors for all possible secret codes.
+        """Solve the game Mastermind for all possible secret codes.
         Return a list of the result of each solve."""
         pool = get_all_codes(self.nb_colors)
         return [
@@ -112,21 +128,6 @@ class EntropicSolver(MastermindSolver):
     def __init__(self, nb_colors):
         super().__init__("Entropic Solver", "entr", nb_colors)
         self.first_guesses = self.load_first_guesses()
-
-    def load_first_guesses(self):
-        with open("src/entropic_first_guesses.json", "r") as f:
-            first_guesses_dict = json.load(f)
-        return first_guesses_dict
-
-    def get_first_guess(self):
-        return self.first_guesses[str(self.nb_colors)]
-
-    def save_first_guess(self, guess, information_got):
-        with open("src/entropic_first_guesses.json", "r") as f:
-            first_guesses_dict = json.load(f)
-            first_guesses_dict[str(self.nb_colors)] = (guess, information_got)
-        with open("src/entropic_first_guesses.json", "w") as f:
-            json.dump(first_guesses_dict, f)
 
     def expected_information(self, code, pool):
         """Sum for all patterns the entropy formula (exception if nb_patterns = 0)
@@ -207,33 +208,44 @@ class KnuthMinMaxSolver(MastermindSolver):
 
     def __init__(self, nb_colors):
         super().__init__("Knuth MinMax Solver", "knuth", nb_colors)
+        self.first_guesses = self.load_first_guesses()
 
     def print_guess_stats(self, result, current_pool, new_pool):
         """Print the stats of the last guess"""
         print(f"Maximum number of possibilities remaining : {result[1]}")
 
     def get_next_guess(self, pool, parallel=True):
+        if len(pool) == self.nb_colors**4:
+            if str(self.nb_colors) in self.first_guesses:
+                results = self.get_first_guess()
+                return results
+            print("Calculating first guess... (takes longer the first time)")
         if self.nb_colors == 1:
             return "AAAA", 1
         full_pool = get_all_codes(self.nb_colors)
         best_guess = full_pool[0]
         best_score = np.inf
-        for guess in full_pool:
-            code_indx = code_to_int(guess, self.nb_colors)
+        for guess_indx in range(self.nb_colors**4):
             distribution = np.zeros(21)
             for code in pool:
 
                 distribution[
-                    self.pattern_matrix[code_to_int(code, self.nb_colors), code_indx]
+                    self.pattern_matrix[code_to_int(code, self.nb_colors), guess_indx]
                 ] += 1
             max_pattern = np.max(distribution)
             if max_pattern < best_score:
-                best_guess = guess
+                best_guess = guess_indx
                 best_score = max_pattern
-            elif max_pattern == best_score and guess in pool:
-                best_guess = guess
+            elif (
+                max_pattern == best_score
+                and int_to_code(guess_indx, self.nb_colors) in pool
+            ):
+                best_guess = guess_indx
                 best_score = max_pattern
-        return best_guess, best_score
+        results = (int_to_code(guess_indx, self.nb_colors), best_score)
+        if len(pool) == self.nb_colors**4:
+            self.save_first_guess(*results)
+        return results
 
 
 class RandomSolver(MastermindSolver):

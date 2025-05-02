@@ -107,6 +107,12 @@ def code_to_int(code, nb_colors):
     return sum((ord(c) - 65) * (nb_colors**i) for i, c in enumerate(code))
 
 
+def int_to_code(code, nb_colors):
+    """Convert an integer representation back to a code based on the number of colors"""
+    colors = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+    return "".join(colors[(code // (nb_colors**i)) % nb_colors] for i in range(4))
+
+
 def evaluate_pattern_matrix(pool):
     """Evaluate all patterns between all codes in the pool using vectorized operations"""
     pattern_matrix = np.zeros((len(pool), len(pool)), dtype=np.uint8)
