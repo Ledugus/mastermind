@@ -1,5 +1,11 @@
 import random
-from solvers import EntropicSolver, MastermindSolver, RandomSolver, UserSolver
+from solvers import (
+    EntropicSolver,
+    KnuthMinMaxSolver,
+    MastermindSolver,
+    RandomSolver,
+    UserSolver,
+)
 from utils import get_all_codes, get_int_input
 
 
@@ -32,7 +38,7 @@ The solver will try to guess it using information theory."""
         )
         print("Let's play !")
         print("-----")
-        solver = EntropicSolver()
+        solver = KnuthMinMaxSolver()
         pool = get_all_codes(nb_colors)
         solver.solve(nb_colors, custom_pool=pool, alone=False)
 

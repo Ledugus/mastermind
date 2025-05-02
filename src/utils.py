@@ -63,12 +63,48 @@ def evaluate_patterns(pool):
     return pattern_matrix
 
 
+def get_patterns_distribution(code, pool):
+    """Return for each pattern the number of codes that get it as feedback
+    when testing against all possibilities in the pool"""
+    distribution = np.zeros(21, dtype=np.uint16)
+    for x in pool:
+        distribution[evaluate_pattern(code, x)] += 1
+    return distribution
+
+
+def get_patterns_probability_distribution(code, pool):
+    """Return for each pattern the probability of getting it as feedback
+    when testing against all possibilities in the pool"""
+    distribution = get_patterns_distribution(code, pool)
+    return distribution / np.sum(distribution)
+
+
+def get_patterns_distribution_matrix(pool):
+    pattern_matrix = evaluate_pattern_matrix(pool)
+    n = len(pool)
+    distributions = np.zeros((n, 21), dtype=np.float32)
+    n_range = np.arange(n)
+    for j in range(n):
+        distributions[n_range, pattern_matrix[:, j]] += 1
+    return distributions
+
+
+def get_patterns_probability_distribution_matrix(pool):
+    distributions = get_patterns_distribution_matrix(pool)
+    return distributions / len(pool)
+
+
 def pattern_int_to_list(pattern):
     return [pattern // 5, pattern % 5]
 
 
 def code_to_int_array(code):
     return np.array([ord(c) - 65 for c in code], dtype=np.uint8)
+
+
+def code_to_int(code, nb_colors):
+    """Convert a code to an integer representation based on the number of colors"""
+    return sum((ord(c) - 65) * (nb_colors**i) for i, c in enumerate(code))
 
 
 def evaluate_pattern_matrix(pool):
