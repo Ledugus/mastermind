@@ -18,7 +18,7 @@ class MastermindSolver(ABC):
         self.first_guesses = {}
 
     @abstractmethod
-    def get_next_guess(self, pool) -> tuple[str, float]:
+    def get_next_guess(self, pool) -> tuple[str, np.number]:
         """Return the best guess to make in the pool of possibilities
         and the score assigned to this guess by the solver."""
 
@@ -28,16 +28,12 @@ class MastermindSolver(ABC):
 
     def load_first_guesses(self):
         with open(f"src/{self.alias}_first_guesses.json", "r") as f:
-            first_guesses_dict = json.load(f)
-        return first_guesses_dict
+            self.first_guesses = json.load(f)
 
-    def get_first_guess(self):
-        return self.first_guesses[str(self.nb_colors)]
-
-    def save_first_guess(self, guess, information_got):
+    def save_first_guess(self, result):
         with open(f"src/{self.alias}_first_guesses.json", "r") as f:
             first_guesses_dict = json.load(f)
-            first_guesses_dict[str(self.nb_colors)] = (guess, information_got)
+            first_guesses_dict[str(self.nb_colors)] = result
         with open(f"src/{self.alias}_first_guesses.json", "w") as f:
             json.dump(first_guesses_dict, f)
 
@@ -60,46 +56,62 @@ class MastermindSolver(ABC):
         Returns:
             tuple: A tuple containing the secret code, the list of guesses and the list of guesses' scores.
         """
-        current_pool = custom_pool if custom_pool else get_all_codes(self.nb_colors)
+        current_pool = (
+            [code_to_int(code, self.nb_colors) for code in custom_pool]
+            if custom_pool
+            else list(range(self.nb_colors**4))
+        )
+        current_pool = np.array(current_pool, dtype=np.uint16)
         if alone:
-            secret_code = secret if secret else random.choice(current_pool)
-            print(secret_code)
+            secret_code = (
+                secret
+                if secret
+                else int_to_code(random.choice(current_pool), self.nb_colors)
+            )
+            secret_indx = code_to_int(secret_code, self.nb_colors)
         correct = False
         guesses = []
         scores = []
         while not correct:
             # Make the next guess
-            results = self.get_next_guess(current_pool)
-            current_guess = results[0]
+            result = self.get_next_guess(current_pool)
+            current_guess = result[0]
+            current_guess_indx = code_to_int(current_guess, self.nb_colors)
             guesses.append(current_guess)
-            scores.append(results[1])
+            scores.append(result[1])
 
             if debug or not alone:
                 print(f"Guess n°{len(guesses)} : {current_guess}")
 
             # Get the feedback
             if alone:
-                pattern = evaluate_pattern(results[0], secret_code)
+                pattern = self.pattern_matrix[current_guess_indx, secret_indx]
             else:
                 pattern = get_clean_feedback()
 
             # Evaluate the feedback
-            new_pool = get_all_codes_matching_pattern(
-                current_guess, pattern, current_pool
-            )
+            new_pool = current_pool[
+                self.pattern_matrix[current_guess_indx, current_pool] == pattern
+            ]
             if pattern == 20:
                 if debug or not alone:
                     print(f"Youhou ! Solution found in {len(guesses)} guesses !")
                 secret_code = current_guess
                 break
             if len(new_pool) == 0:
+                print(
+                    [int_to_code(code, self.nb_colors) for code in current_pool],
+                    pattern,
+                    "Solution",
+                    secret_code,
+                )
                 print("No more possibilities left ! Did you enter the right feedback ?")
                 break
             if debug or not alone:
                 print(
                     f"FeedBack : {pattern_int_to_list(pattern)[0]} well placed, {pattern_int_to_list(pattern)[1]} misplaced"
                 )
-                self.print_guess_stats(results, current_pool, new_pool)
+                self.print_guess_stats(result, current_pool, new_pool)
                 print("-----")
             current_pool = new_pool
 
@@ -108,23 +120,32 @@ class MastermindSolver(ABC):
     def solve_all_codes(self):
         """Solve the game Mastermind for all possible secret codes.
         Return a list of the result of each solve."""
+        print("Solving all codes for the", self.name)
         pool = get_all_codes(self.nb_colors)
-        return [
-            self.solve(
-                custom_pool=pool,
-                secret=code,
-                debug=False,
-            )
-            for code in pool
-        ]
+        results = [0] * len(pool)
+        for i, code in enumerate(pool):
+            results[i] = self.solve(secret=code)
+            progress_bar(i + 1, len(pool))
+
+        return results
 
 
 class EntropicSolver(MastermindSolver):
     """A Mastermind solver based on maximising the entropy of the guess"""
 
-    def __init__(self, nb_colors):
-        super().__init__("Entropic Solver", "entr", nb_colors)
-        self.first_guesses = self.load_first_guesses()
+    def __init__(self, nb_colors, outside_pool=False):
+        name = "Entropic Solver (outside pool)" if outside_pool else "Entropic Solver"
+        alias = "entr_out" if outside_pool else "entr"
+        super().__init__(name, alias, nb_colors)
+        self.load_first_guesses()
+        self.outside_pool = outside_pool
+
+    def print_guess_stats(self, result, current_pool, new_pool):
+        """Print the stats of the last guess"""
+        print(f"Expected information : {result[1]:.3f} bits")
+        print(
+            f"Actual information received : {log2(len(current_pool) / len(new_pool)):.3f} bits, {len(new_pool)} remaining possibilities"
+        )
 
     def get_entropy(self, distributions):
         """Return the entropy of the distributions"""
@@ -138,22 +159,33 @@ class EntropicSolver(MastermindSolver):
         """
         if len(pool) == self.nb_colors**4:
             if str(self.nb_colors) in self.first_guesses:
-                results = self.get_first_guess()
-                return results
+                return self.first_guesses[str(self.nb_colors)]
             print("Calculating first guess... (takes longer the first time)")
-        distributions = get_patterns_probability_distribution_matrix(pool)
-        entropies = self.get_entropy(distributions)
-        results = pool[np.argmax(entropies)], float(np.max(entropies))
+        if len(pool) <= 2:
+            return int_to_code(pool[0], self.nb_colors), 1
+        n = self.nb_colors**4
+        best_score = 0
+        best_guess_indx = 0
+        possible_guesses = list(range(n)) if self.outside_pool else pool
+        for guess_indx in possible_guesses:
+            distribution = np.zeros(21, dtype=np.uint16)
+            distribution[self.pattern_matrix[guess_indx, pool]] += 1
+            distribution = distribution / len(pool)
+            entropy = stats.entropy(distribution, base=2)
+            if entropy > best_score:
+                best_guess_indx = guess_indx
+                best_score = entropy
+            elif entropy == best_score and guess_indx in pool:
+                best_guess_indx = guess_indx
+                best_score = entropy
+        result = (int_to_code(best_guess_indx, self.nb_colors), best_score)
         if len(pool) == self.nb_colors**4:
-            self.save_first_guess(*results)
-        return results
+            self.save_first_guess(result)
+            self.load_first_guesses()
 
-    def print_guess_stats(self, result, current_pool, new_pool):
-        """Print the stats of the last guess"""
-        print(f"Expected information : {result[1]:.3f} bits")
-        print(
-            f"Actual information received : {log2(len(current_pool) / len(new_pool)):.3f} bits, {len(new_pool)} remaining possibilities"
-        )
+            print("First guess saved : ", result[0])
+            print(self.first_guesses)
+        return result
 
 
 class KnuthMinMaxSolver(MastermindSolver):
@@ -161,7 +193,7 @@ class KnuthMinMaxSolver(MastermindSolver):
 
     def __init__(self, nb_colors):
         super().__init__("Knuth MinMax Solver", "knuth", nb_colors)
-        self.first_guesses = self.load_first_guesses()
+        self.load_first_guesses()
 
     def print_guess_stats(self, result, current_pool, new_pool):
         """Print the stats of the last guess"""
@@ -170,35 +202,31 @@ class KnuthMinMaxSolver(MastermindSolver):
     def get_next_guess(self, pool):
         if len(pool) == self.nb_colors**4:
             if str(self.nb_colors) in self.first_guesses:
-                results = self.get_first_guess()
-                return results
+                return self.first_guesses[str(self.nb_colors)]
             print("Calculating first guess... (takes longer the first time)")
-        if self.nb_colors == 1:
-            return "AAAA", 1
-        full_pool = get_all_codes(self.nb_colors)
-        best_guess = full_pool[0]
+        if len(pool) <= 2:
+            return int_to_code(pool[0], self.nb_colors), 1
+        full_pool = list(range(self.nb_colors**4))
+        best_guess = 0
         best_score = np.inf
-        for guess_indx in range(self.nb_colors**4):
+        for guess_indx in full_pool:
             distribution = np.zeros(21)
-            for code in pool:
-
-                distribution[
-                    self.pattern_matrix[code_to_int(code, self.nb_colors), guess_indx]
-                ] += 1
+            for i in pool:
+                distribution[self.pattern_matrix[guess_indx, i]] += 1
             max_pattern = np.max(distribution)
             if max_pattern < best_score:
                 best_guess = guess_indx
                 best_score = max_pattern
-            elif (
-                max_pattern == best_score
-                and int_to_code(guess_indx, self.nb_colors) in pool
-            ):
+            elif max_pattern == best_score and guess_indx in pool:
                 best_guess = guess_indx
                 best_score = max_pattern
-        results = (int_to_code(guess_indx, self.nb_colors), best_score)
+        result = (int_to_code(best_guess, self.nb_colors), best_score)
         if len(pool) == self.nb_colors**4:
-            self.save_first_guess(*results)
-        return results
+            self.save_first_guess(result)
+            self.load_first_guesses()
+            print("First guess saved : ", result[0])
+            print(self.first_guesses)
+        return result
 
 
 class RandomSolver(MastermindSolver):
@@ -212,7 +240,7 @@ class RandomSolver(MastermindSolver):
         pass
 
     def get_next_guess(self, pool):
-        return random.choice(pool), 1 / len(pool)
+        return int_to_code(random.choice(pool), self.nb_colors), 1 / len(pool)
 
 
 class UserSolver(MastermindSolver):

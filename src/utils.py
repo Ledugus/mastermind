@@ -24,7 +24,7 @@ def get_all_codes(nb_colors):
     colors = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
 
     codes = [
-        f"{w}{z}{y}{x}"
+        f"{x}{y}{z}{w}"
         for x in colors[:nb_colors]
         for y in colors[:nb_colors]
         for z in colors[:nb_colors]
@@ -102,15 +102,25 @@ def code_to_int_array(code):
     return np.array([ord(c) - 65 for c in code], dtype=np.uint8)
 
 
+def int_to_int_array(code, nb_colors):
+    """Convert an integer representation back to an array of integers based on the number of colors"""
+    int_array = np.zeros(4, dtype=np.uint8)
+    for i in range(4)[::-1]:
+        int_array[3 - i] = code // nb_colors**i
+        code -= int_array[3 - i] * nb_colors**i
+
+    return int_array
+
+
 def code_to_int(code, nb_colors):
     """Convert a code to an integer representation based on the number of colors"""
-    return sum((ord(c) - 65) * (nb_colors**i) for i, c in enumerate(code))
+    return sum((ord(c) - 65) * (nb_colors ** (3 - i)) for i, c in enumerate(code))
 
 
 def int_to_code(code, nb_colors):
     """Convert an integer representation back to a code based on the number of colors"""
     colors = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
-    return "".join(colors[(code // (nb_colors**i)) % nb_colors] for i in range(4))
+    return "".join(colors[(code // (nb_colors**i)) % nb_colors] for i in range(4)[::-1])
 
 
 def evaluate_pattern_matrix(pool):
@@ -165,6 +175,6 @@ def get_clean_feedback():
         )
 
 
-def get_all_codes_matching_pattern(code, feedback_pattern, pool):
+def get_all_codes_matching_pattern(code_indx, feedback_pattern, pool, pattern_matrix):
     """Finds all codes that are still possible as an answer, based on the feedback pattern"""
-    return list(filter(lambda x: evaluate_pattern(code, x) == feedback_pattern, pool))
+    return np.where(pattern_matrix[code_indx][pool] == feedback_pattern)[0].tolist()

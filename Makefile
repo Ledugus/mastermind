@@ -1,8 +1,9 @@
 PYTHON=python3
 SRC=src
 
-play: $(SRC)/game.py
-	$(PYTHON) $^
+game: $(SRC)/game.py
+	@$(PYTHON) $^
 
-test: $(SRC)/test_solver.py
-	$(PYTHON) $^
+stats: $(SRC)/stats.py
+	@mkdir -p charts
+	@$(PYTHON) $^
