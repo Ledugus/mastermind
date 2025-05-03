@@ -3,7 +3,7 @@ import time
 import matplotlib.pyplot as plt
 from solvers import EntropicSolver, RandomSolver, KnuthMinMaxSolver
 
-NB_COLORS = 5
+NB_COLORS = 6
 
 
 def get_stats(solver):
@@ -39,12 +39,12 @@ def main():
         print(
             f"{solver.name} took {total_time:.2f} seconds and made {avg_guesses:.2f} guesses on average"
         )
-        plt.bar(list(range(1, 13)), guesses_distribution, label=solver.name)
-        plt.title(f"Guesses distribution : {solver.name} ({NB_COLORS} colors)")
+        plt.bar(list(range(12)), guesses_distribution, label=solver.name)
+        plt.title(f"Game length distribution : {solver.name} ({NB_COLORS} colors)")
         plt.xlabel("Number of guesses")
         plt.ylabel("Number of codes")
         plt.legend()
-        plt.savefig(f"charts/guesses_distribution_{solver.alias}.png")
+        plt.savefig(f"charts/guesses_distribution_{solver.alias}_{NB_COLORS}.png")
         plt.show()
 
 
